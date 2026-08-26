@@ -1,0 +1,26 @@
+:root {
+  --fundo: #07080c;
+  --texto: #e8e8ef;
+  --apagado: #6b6b7b;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--fundo);
+  color: var(--texto);
+}
+
+#cidade {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
