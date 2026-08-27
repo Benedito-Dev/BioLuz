@@ -177,7 +177,7 @@ export class Simulacao {
       pai.vy -= dy * forca
     }
 
-    // 3. Gravidade — fraca, so para o grafo nao fugir da tela.
+    // 3. Gravidade — fraca, so para manter o grafo compacto e centrado.
     for (const no of nos.values()) {
       no.vx += (cx - no.x) * k.gravidade
       no.vy += (cy - no.y) * k.gravidade

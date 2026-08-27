@@ -1,19 +1,23 @@
 import { montarCanvas } from './canvas.ts'
-import { montarGrafo } from './grafo.ts'
 import { Simulacao } from './fisica.ts'
-import { desenhar, desenharDiagnostico } from './render.ts'
+import { LinhaDoTempo } from './linha.ts'
+import { desenhar, desenharDiagnostico, desenharProgresso } from './render.ts'
+import { limparMortos, transicao } from './tempo.ts'
 import type { No, RespostaErro, RespostaRepo } from '../compartilhado/tipos.ts'
 
 const { ctx, largura, altura } = montarCanvas('cidade')
 const sim = new Simulacao()
 
-let nos = new Map<string, No>()
+const nos = new Map<string, No>()
+let linha: LinhaDoTempo | null = null
 let estado = 'carregando…'
-let passos = 0
+let ultimaTransicao = { nasceram: 0, morreram: 0 }
 
-// Etapa 2: monta o ULTIMO quadro inteiro e deixa acomodar.
-// O tempo passando chega na Etapa 3.
-const repo = new URLSearchParams(location.search).get('repo') ?? 'vercel/ms'
+const parametros = new URLSearchParams(location.search)
+const repo = parametros.get('repo') ?? 'vercel/ms'
+// ?ms=300 acelera a animacao — util para conferir o comportamento inteiro
+// sem esperar dois minutos.
+const msPorQuadro = Number(parametros.get('ms')) || undefined
 
 async function carregar(): Promise<void> {
   try {
@@ -24,15 +28,14 @@ async function carregar(): Promise<void> {
       estado = corpo.mensagem
       return
     }
-
-    const ultimo = corpo.quadros.at(-1)
-    if (!ultimo) {
+    if (corpo.quadros.length === 0) {
       estado = 'sem quadros'
       return
     }
 
-    nos = montarGrafo(ultimo.arquivos, largura(), altura())
-    estado = `${corpo.repo} · ${ultimo.data.slice(0, 10)}`
+    linha = new LinhaDoTempo(corpo.quadros, msPorQuadro)
+    linha.reiniciar(performance.now())
+    estado = corpo.repo
   } catch (e) {
     estado = `falhou: ${e instanceof Error ? e.message : e}`
   }
@@ -40,20 +43,59 @@ async function carregar(): Promise<void> {
 
 void carregar()
 
-function quadro(): void {
-  if (nos.size > 0) {
-    sim.passo(nos, largura(), altura())
-    passos++
+// Espaco pausa, R reinicia.
+addEventListener('keydown', (e) => {
+  if (!linha) return
+  if (e.code === 'Space') {
+    e.preventDefault()
+    linha.pausar()
+  }
+  if (e.code === 'KeyR') {
+    nos.clear()
+    linha.reiniciar(performance.now())
+  }
+})
+
+function frame(): void {
+  const agora = performance.now()
+
+  if (linha) {
+    const passo = linha.avancar(agora)
+    if (passo) {
+      ultimaTransicao = transicao(
+        nos, passo.de, passo.para, passo.indice, largura(), altura(), agora,
+      )
+    }
+    limparMortos(nos, agora)
   }
 
-  desenhar(ctx, nos, largura(), altura())
+  if (nos.size > 0) sim.passo(nos, largura(), altura())
+
+  desenhar(ctx, nos, largura(), altura(), agora)
+
+  const quadro = linha?.atual
+  const posicao = linha ? linha.posicao + 1 : 0
   desenharDiagnostico(ctx, [
-    estado,
-    `nos: ${nos.size}   passos: ${passos}`,
-    `energia: ${sim.energia(nos).toExponential(2)}`,
+    `${estado}${linha?.estaPausada ? '  [pausado]' : ''}`,
+    quadro
+      ? `${quadro.data.slice(0, 10)}   quadro ${posicao}/${linha!.total}`
+      : '',
+    quadro?.autores.length
+      ? `autores: ${quadro.autores.slice(0, 4).join(', ')}`
+      : '',
+    `nos: ${nos.size}   +${ultimaTransicao.nasceram} -${ultimaTransicao.morreram}`,
+    'espaco: pausar    R: reiniciar',
   ])
 
-  requestAnimationFrame(quadro)
+  if (linha) {
+    const progresso =
+      linha.posicao < 0
+        ? 0
+        : (linha.posicao + linha.fracao(agora)) / Math.max(1, linha.total - 1)
+    desenharProgresso(ctx, progresso, largura(), altura())
+  }
+
+  requestAnimationFrame(frame)
 }
 
-requestAnimationFrame(quadro)
+requestAnimationFrame(frame)
