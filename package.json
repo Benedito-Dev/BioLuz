@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "check": "tsc --noEmit && tsc --noEmit -p api/tsconfig.json",
     "test": "node --experimental-strip-types --test testes/*.test.ts",
-    "api": "node --experimental-strip-types testes/servidor.ts"
+    "api": "node --experimental-strip-types testes/servidor.ts",
+    "tudo": "node --experimental-strip-types testes/servidor.ts & vite"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

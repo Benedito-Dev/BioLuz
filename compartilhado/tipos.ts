@@ -61,4 +61,6 @@ export type No = {
   tamanho: number
   /** null enquanto vivo; timestamp do inicio do fade ao morrer. */
   morrendoDesde: number | null
+  /** Indice interno da simulacao, para visitar cada par de nos uma vez so. */
+  ordem: number
 }
