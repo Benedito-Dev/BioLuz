@@ -60,7 +60,7 @@ function cabecalhos(): Record<string, string> {
   const h: Record<string, string> = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
-    'User-Agent': 'cidade-de-commits',
+    'User-Agent': 'bioluz',
   }
   // O token so existe no servidor. Se faltar, seguimos anonimos (60 req/h).
   const token = process.env.GITHUB_TOKEN

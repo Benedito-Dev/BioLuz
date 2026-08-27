@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌃 Cidade de Commits
+# 🌃 BioLuz
 
 **Cole um repositório do GitHub e assista ele se construir do nada.**
 
@@ -29,7 +29,7 @@ O projeto inteiro cresce diante de você em dois minutos.
 Um repositório do Git guarda a história completa de um projeto — mas essa
 história só é legível como texto: listas de commits, diffs, mensagens.
 
-**Cidade de Commits torna essa história visível.** Você cola uma URL e vê o
+**BioLuz torna essa história visível.** Você cola uma URL e vê o
 projeto nascer: o primeiro arquivo solitário, a primeira pasta, a explosão de
 crescimento quando o time chegou, a grande refatoração em que um bairro inteiro
 se apaga enquanto outro acende ao lado.

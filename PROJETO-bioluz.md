@@ -1,4 +1,4 @@
-# Cidade de Commits — especificação de implementação
+# BioLuz — especificação de implementação
 
 > Documento de contexto para agente de código. Cole na raiz do repositório
 > (como `PROJETO.md` ou dentro de `CLAUDE.md`) antes de começar a implementar.
