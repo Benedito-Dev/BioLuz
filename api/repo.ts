@@ -32,7 +32,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (!alvo) {
     return erro(
       'repo_invalido',
-      'Use o formato dono/nome, ou cole a URL do repositorio.',
+      'Use o formato dono/repositório, ou cole a URL do GitHub.',
     )
   }
 

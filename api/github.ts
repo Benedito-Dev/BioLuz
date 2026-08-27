@@ -89,7 +89,7 @@ async function buscarComResposta(
     const causa = e instanceof Error ? e.message : String(e)
     throw new ErroGitHub(
       'falha_github',
-      `Nao consegui falar com o GitHub (${causa}).`,
+      `Não consegui falar com o GitHub (${causa}).`,
     )
   }
 
@@ -108,16 +108,16 @@ async function buscarComResposta(
         resetEm,
       )
     }
-    throw new ErroGitHub('privado', 'Esse repositorio e privado.')
+    throw new ErroGitHub('privado', 'Esse repositório é privado ou não existe.')
   }
 
   if (resposta.status === 404) {
-    throw new ErroGitHub('nao_encontrado', 'Nao encontrei esse repositorio.')
+    throw new ErroGitHub('nao_encontrado', 'Não encontrei esse repositório.')
   }
 
   if (resposta.status === 409) {
     // O GitHub responde 409 para repositorio sem nenhum commit.
-    throw new ErroGitHub('repo_vazio', 'Esse repositorio esta vazio.')
+    throw new ErroGitHub('repo_vazio', 'Esse repositório está vazio.')
   }
 
   throw new ErroGitHub(
@@ -174,7 +174,7 @@ export async function listarCommits(
   const primeira = await buscarComResposta(`${base}&page=1`)
   const inicial = normalizar(primeira.dados as PaginaCommits)
   if (inicial.length === 0) {
-    throw new ErroGitHub('repo_vazio', 'Esse repositorio nao tem commits.')
+    throw new ErroGitHub('repo_vazio', 'Esse repositório ainda não tem commits.')
   }
 
   const paginas = ultimaPagina(primeira.resposta)

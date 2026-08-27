@@ -1,67 +1,106 @@
 import { montarCanvas } from './canvas.ts'
 import { Simulacao } from './fisica.ts'
 import { LinhaDoTempo } from './linha.ts'
-import {
-  desenhar,
-  desenharDiagnostico,
-  desenharProgresso,
-  desenharRotulos,
-} from './render.ts'
+import { desenhar, desenharProgresso, desenharRotulos } from './render.ts'
 import { limparMortos, transicao } from './tempo.ts'
+import { Interface } from './ui.ts'
 import type { No, RespostaErro, RespostaRepo } from '../compartilhado/tipos.ts'
 
 const { ctx, largura, altura } = montarCanvas('cidade')
 // Camada separada: a cidade usa rastro, a interface limpa a cada frame.
 const { ctx: ctxUi } = montarCanvas('interface')
-const sim = new Simulacao()
 
+const sim = new Simulacao()
 const nos = new Map<string, No>()
+
 let linha: LinhaDoTempo | null = null
-let estado = 'carregando…'
-let ultimaTransicao = { nasceram: 0, morreram: 0 }
 let tamanhos: Record<string, number> = {}
+let requisicaoAtual = 0
 
 const parametros = new URLSearchParams(location.search)
-const repo = parametros.get('repo') ?? 'vercel/ms'
 // ?ms=300 acelera a animacao — util para conferir o comportamento inteiro
 // sem esperar dois minutos.
 const msPorQuadro = Number(parametros.get('ms')) || undefined
 
-async function carregar(): Promise<void> {
+const ui = new Interface(
+  (repo) => void carregar(repo),
+  () => {
+    linha?.pausar()
+    ui.refletirPausa(linha?.estaPausada ?? false)
+  },
+  () => {
+    nos.clear()
+    ctx.clearRect(0, 0, largura(), altura())
+    linha?.reiniciar(performance.now())
+    ui.refletirPausa(false)
+  },
+)
+
+async function carregar(repo: string): Promise<void> {
+  const minha = ++requisicaoAtual
+  linha = null
+  nos.clear()
+  ctx.clearRect(0, 0, largura(), altura())
+  ui.iniciarCarregamento()
+
+  // A URL acompanha o repositorio: recarregar ou compartilhar funciona.
+  const url = new URL(location.href)
+  url.searchParams.set('repo', repo)
+  history.replaceState(null, '', url)
+
   try {
     const r = await fetch(`/api/repo?repo=${encodeURIComponent(repo)}`)
     const corpo = (await r.json()) as RespostaRepo | RespostaErro
 
+    // Chegou tarde: o usuario ja pediu outro repositorio.
+    if (minha !== requisicaoAtual) return
+
     if ('erro' in corpo) {
-      estado = corpo.mensagem
+      ui.mostrarErro(corpo.mensagem)
       return
     }
     if (corpo.quadros.length === 0) {
-      estado = 'sem quadros'
+      ui.mostrarErro('Esse repositório não tem histórico para mostrar.')
       return
     }
 
     tamanhos = corpo.tamanhos ?? {}
     linha = new LinhaDoTempo(corpo.quadros, msPorQuadro)
     linha.reiniciar(performance.now())
-    estado = corpo.repo
+    ui.pararCarregamento()
+    ui.refletirPausa(false)
+
+    if (corpo.truncado) {
+      ui.mostrarAviso(
+        'Repositório grande: mostrando os 500 maiores arquivos, ' +
+          'para a simulação continuar fluida.',
+      )
+    }
   } catch (e) {
-    estado = `falhou: ${e instanceof Error ? e.message : e}`
+    if (minha !== requisicaoAtual) return
+    ui.mostrarErro(
+      e instanceof TypeError
+        ? 'Não consegui falar com o servidor. Verifique a conexão.'
+        : 'Algo deu errado ao montar a cidade.',
+    )
   }
 }
 
-void carregar()
-
-// Espaco pausa, R reinicia.
 addEventListener('keydown', (e) => {
+  // Nao sequestrar o teclado enquanto a pessoa digita no campo.
+  if (e.target instanceof HTMLInputElement) return
   if (!linha) return
+
   if (e.code === 'Space') {
     e.preventDefault()
     linha.pausar()
+    ui.refletirPausa(linha.estaPausada)
   }
   if (e.code === 'KeyR') {
     nos.clear()
+    ctx.clearRect(0, 0, largura(), altura())
     linha.reiniciar(performance.now())
+    ui.refletirPausa(false)
   }
 })
 
@@ -71,7 +110,7 @@ function frame(): void {
   if (linha) {
     const passo = linha.avancar(agora)
     if (passo) {
-      ultimaTransicao = transicao(
+      transicao(
         nos, passo.de, passo.para, passo.indice, largura(), altura(), agora,
         Math.random, tamanhos,
       )
@@ -86,21 +125,10 @@ function frame(): void {
   ctxUi.clearRect(0, 0, largura(), altura())
   desenharRotulos(ctxUi, nos, agora)
 
-  const quadro = linha?.atual
-  const posicao = linha ? linha.posicao + 1 : 0
-  desenharDiagnostico(ctxUi, [
-    `${estado}${linha?.estaPausada ? '  [pausado]' : ''}`,
-    quadro
-      ? `${quadro.data.slice(0, 10)}   quadro ${posicao}/${linha!.total}`
-      : '',
-    quadro?.autores.length
-      ? `autores: ${quadro.autores.slice(0, 4).join(', ')}`
-      : '',
-    `nos: ${nos.size}   +${ultimaTransicao.nasceram} -${ultimaTransicao.morreram}`,
-    'espaco: pausar    R: reiniciar',
-  ])
-
   if (linha) {
+    const vivos = contarVivos()
+    ui.atualizarLinha(linha.atual, linha.posicao + 1, linha.total, vivos)
+
     const progresso =
       linha.posicao < 0
         ? 0
@@ -111,4 +139,17 @@ function frame(): void {
   requestAnimationFrame(frame)
 }
 
+function contarVivos(): number {
+  let n = 0
+  for (const no of nos.values()) {
+    if (no.morrendoDesde === null && no.tipo === 'arquivo') n++
+  }
+  return n
+}
+
 requestAnimationFrame(frame)
+
+// Abre direto no repositorio da URL, ou num exemplo.
+const inicial = parametros.get('repo') ?? 'expressjs/express'
+ui.preencher(inicial)
+void carregar(inicial)

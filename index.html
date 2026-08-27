@@ -15,6 +15,53 @@
          limpa a cada frame. Sem isso o texto borra sobre si mesmo. -->
     <canvas id="cidade"></canvas>
     <canvas id="interface"></canvas>
+
+    <header class="topo">
+      <form id="busca" class="busca" autocomplete="off">
+        <input
+          id="entrada"
+          type="text"
+          name="repo"
+          placeholder="dono/repositorio ou a URL do GitHub"
+          aria-label="Repositorio do GitHub"
+          spellcheck="false"
+        />
+        <button type="submit" id="ir">Construir</button>
+      </form>
+
+      <nav class="exemplos" aria-label="Exemplos">
+        <button type="button" data-repo="vercel/ms">ms</button>
+        <button type="button" data-repo="expressjs/express">express</button>
+        <button type="button" data-repo="torvalds/linux">linux</button>
+      </nav>
+    </header>
+
+    <!-- Carregamento narrado: cobre os segundos de busca contando o que
+         esta acontecendo, em vez de mostrar uma tela parada. -->
+    <div id="carregando" class="carregando" hidden>
+      <div class="pulso"></div>
+      <p id="narracao">buscando o repositorio…</p>
+    </div>
+
+    <div id="erro" class="erro" hidden>
+      <p id="mensagemErro"></p>
+      <button type="button" id="tentarOutro">Tentar outro</button>
+    </div>
+
+    <footer id="rodape" class="rodape" hidden>
+      <div class="linha">
+        <time id="data"></time>
+        <span id="autores" class="autores"></span>
+        <span id="contagem" class="contagem"></span>
+      </div>
+      <div class="controles">
+        <button type="button" id="pausar" aria-label="Pausar">❚❚</button>
+        <button type="button" id="reiniciar" aria-label="Reiniciar">↺</button>
+      </div>
+    </footer>
+
+    <p id="aviso" class="aviso" hidden></p>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
