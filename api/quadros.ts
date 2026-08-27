@@ -168,6 +168,26 @@ export function montarQuadros(
   })
 }
 
+/**
+ * Maior tamanho que cada arquivo permitido teve ao longo da historia.
+ * O maior, nao o final, para que um arquivo grande que encolheu no fim
+ * ainda apareca com o peso que teve.
+ */
+export function tamanhosDe(
+  arvores: ArquivoBruto[][],
+  permitidos: Set<string> | null,
+): Record<string, number> {
+  const mapa: Record<string, number> = {}
+  for (const arvore of arvores) {
+    for (const a of arvore) {
+      if (permitidos && !permitidos.has(a.caminho)) continue
+      const atual = mapa[a.caminho]
+      if (atual === undefined || a.tamanho > atual) mapa[a.caminho] = a.tamanho
+    }
+  }
+  return mapa
+}
+
 /** Autores unicos que commitaram apos `shaDe` ate `shaAte` inclusive. */
 function autoresEntre(
   cronologicos: CommitBruto[],

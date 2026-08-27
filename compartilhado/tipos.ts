@@ -18,6 +18,13 @@ export type Quadro = {
 export type RespostaRepo = {
   repo: string
   quadros: Quadro[]
+  /**
+   * Bytes de cada arquivo, no maior tamanho que ele teve.
+   *
+   * Fica aqui e nao dentro de cada Quadro porque o caminho se repete nos 40
+   * quadros: no Linux isso seria 500 numeros x 40 = 20 mil, contra 500 aqui.
+   */
+  tamanhos: Record<string, number>
   /** Total de commits que o repositorio tem, nao so os amostrados. */
   totalCommits: number
   /** true quando passamos do teto e cortamos aos maiores arquivos. */

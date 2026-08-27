@@ -89,10 +89,29 @@ export function montarGrafo(
 }
 
 /**
- * Pasta grande fica maior — o raio vira uma dica visual de peso.
- * Arquivo tem raio proprio, ajustado por tamanho na Etapa 4.
+ * Raio de um arquivo a partir do tamanho em bytes.
+ *
+ * Escala logaritmica. A raiz cubica parecia natural, mas satura: no Linux o
+ * corte de 500 fica com os MAIORES arquivos, todos passavam do teto e as
+ * bolinhas ficavam identicas — raio mediano 9,0 de um maximo de 9,0, e a
+ * informacao de tamanho sumia. O log distingue em qualquer faixa, porque o
+ * que importa e a ordem de grandeza: 1 KB, 10 KB, 100 KB.
  */
-export function dimensionar(nos: Map<string, No>): void {
+export function raioPorTamanho(bytes: number): number {
+  if (bytes <= 0) return 2.5
+  // log10: 100 B -> 2, 1 KB -> 3, 100 KB -> 5, 10 MB -> 7
+  const ordem = Math.log10(bytes)
+  return Math.max(2.2, Math.min(9, 0.4 + ordem * 1.25))
+}
+
+/**
+ * Pasta grande fica maior — o raio vira uma dica visual de peso.
+ * Arquivo cresce com o tamanho em bytes.
+ */
+export function dimensionar(
+  nos: Map<string, No>,
+  tamanhos?: Record<string, number>,
+): void {
   const filhos = new Map<string, number>()
   for (const no of nos.values()) {
     if (no.pai === null) continue
@@ -100,9 +119,20 @@ export function dimensionar(nos: Map<string, No>): void {
   }
 
   for (const no of nos.values()) {
-    if (no.tipo !== 'pasta') continue
-    const quantos = filhos.get(no.caminho) ?? 0
-    no.raioAlvo = 4 + Math.min(10, Math.sqrt(quantos) * 1.8)
+    // Quem esta morrendo encolhe para zero; nao redimensionar por cima.
+    if (no.morrendoDesde !== null) continue
+
+    if (no.tipo === 'pasta') {
+      const quantos = filhos.get(no.caminho) ?? 0
+      no.raioAlvo = 4 + Math.min(10, Math.sqrt(quantos) * 1.8)
+      continue
+    }
+
+    const bytes = tamanhos?.[no.caminho] ?? no.tamanho
+    if (bytes > 0) {
+      no.tamanho = bytes
+      no.raioAlvo = raioPorTamanho(bytes)
+    }
   }
 }
 

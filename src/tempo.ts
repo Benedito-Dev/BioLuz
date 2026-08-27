@@ -50,6 +50,7 @@ export function transicao(
   altura: number,
   agora: number = performance.now(),
   aleatorio: () => number = Math.random,
+  tamanhos?: Record<string, number>,
 ): Transicao {
   const antes = de ? universo(de.arquivos) : new Set<string>()
   const depois = universo(para.arquivos)
@@ -107,7 +108,7 @@ export function transicao(
     }
   }
 
-  dimensionar(nos)
+  dimensionar(nos, tamanhos)
   return { nasceram, morreram }
 }
 

@@ -200,7 +200,10 @@ export class Simulacao {
 
       // O raio persegue o alvo: nascimento cresce, morte encolhe (Etapa 3).
       no.raio += (no.raioAlvo - no.raio) * 0.12
-      if (no.brilho > 0) no.brilho = Math.max(0, no.brilho - 0.02)
+      // Decaimento do brilho: 0,02 por frame levava 50 frames (~0,8 s) e,
+      // quando dezenas de nos nasciam juntos, a tela inteira ficava branca —
+      // 71% dos pixels sem cor. Em 0,06 o clarao dura ~0,3 s e a cor volta.
+      if (no.brilho > 0) no.brilho = Math.max(0, no.brilho - 0.06)
     }
   }
 

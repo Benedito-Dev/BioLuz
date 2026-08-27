@@ -1,17 +1,25 @@
 import { montarCanvas } from './canvas.ts'
 import { Simulacao } from './fisica.ts'
 import { LinhaDoTempo } from './linha.ts'
-import { desenhar, desenharDiagnostico, desenharProgresso } from './render.ts'
+import {
+  desenhar,
+  desenharDiagnostico,
+  desenharProgresso,
+  desenharRotulos,
+} from './render.ts'
 import { limparMortos, transicao } from './tempo.ts'
 import type { No, RespostaErro, RespostaRepo } from '../compartilhado/tipos.ts'
 
 const { ctx, largura, altura } = montarCanvas('cidade')
+// Camada separada: a cidade usa rastro, a interface limpa a cada frame.
+const { ctx: ctxUi } = montarCanvas('interface')
 const sim = new Simulacao()
 
 const nos = new Map<string, No>()
 let linha: LinhaDoTempo | null = null
 let estado = 'carregando…'
 let ultimaTransicao = { nasceram: 0, morreram: 0 }
+let tamanhos: Record<string, number> = {}
 
 const parametros = new URLSearchParams(location.search)
 const repo = parametros.get('repo') ?? 'vercel/ms'
@@ -33,6 +41,7 @@ async function carregar(): Promise<void> {
       return
     }
 
+    tamanhos = corpo.tamanhos ?? {}
     linha = new LinhaDoTempo(corpo.quadros, msPorQuadro)
     linha.reiniciar(performance.now())
     estado = corpo.repo
@@ -64,6 +73,7 @@ function frame(): void {
     if (passo) {
       ultimaTransicao = transicao(
         nos, passo.de, passo.para, passo.indice, largura(), altura(), agora,
+        Math.random, tamanhos,
       )
     }
     limparMortos(nos, agora)
@@ -73,9 +83,12 @@ function frame(): void {
 
   desenhar(ctx, nos, largura(), altura(), agora)
 
+  ctxUi.clearRect(0, 0, largura(), altura())
+  desenharRotulos(ctxUi, nos, agora)
+
   const quadro = linha?.atual
   const posicao = linha ? linha.posicao + 1 : 0
-  desenharDiagnostico(ctx, [
+  desenharDiagnostico(ctxUi, [
     `${estado}${linha?.estaPausada ? '  [pausado]' : ''}`,
     quadro
       ? `${quadro.data.slice(0, 10)}   quadro ${posicao}/${linha!.total}`
@@ -92,7 +105,7 @@ function frame(): void {
       linha.posicao < 0
         ? 0
         : (linha.posicao + linha.fracao(agora)) / Math.max(1, linha.total - 1)
-    desenharProgresso(ctx, progresso, largura(), altura())
+    desenharProgresso(ctxUi, progresso, largura(), altura())
   }
 
   requestAnimationFrame(frame)

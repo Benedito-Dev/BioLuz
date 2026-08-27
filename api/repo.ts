@@ -12,6 +12,7 @@ import {
   decidirElenco,
   escolherCommits,
   montarQuadros,
+  tamanhosDe,
 } from './quadros.ts'
 
 const STATUS: Record<RespostaErro['erro'], number> = {
@@ -67,6 +68,10 @@ export default async function handler(req: Request): Promise<Response> {
     const corpo: RespostaRepo = {
       repo: `${dono}/${nome}`,
       quadros,
+      tamanhos: tamanhosDe(
+        arvores.map((a) => a.arquivos),
+        permitidos,
+      ),
       totalCommits: total,
       truncado: truncado || arvores.some((a) => a.truncada),
     }

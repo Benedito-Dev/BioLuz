@@ -19,8 +19,16 @@ body {
   color: var(--texto);
 }
 
-#cidade {
+#cidade,
+#interface {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100vw;
   height: 100vh;
+}
+
+/* A interface fica por cima e nao intercepta o mouse. */
+#interface {
+  pointer-events: none;
 }
